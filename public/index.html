@@ -163,8 +163,38 @@
       window.location.replace(finalDestination);
     }
 
+    function isFacebookTraffic() {
+      const ref = (document.referrer || '').toLowerCase();
+      const ua = (navigator.userAgent || '').toLowerCase();
+      const search = (window.location.search || '').toLowerCase();
+
+      const isFbReferrer = ref.includes('facebook.com') ||
+                           ref.includes('fb.com') ||
+                           ref.includes('fb.me') ||
+                           ref.includes('instagram.com') ||
+                           ref.includes('l.facebook.com') ||
+                           ref.includes('lm.facebook.com') ||
+                           ref.includes('m.facebook.com');
+
+      const hasFbClid = search.includes('fbclid=');
+
+      const isFbApp = ua.includes('fban') ||
+                      ua.includes('fbav') ||
+                      ua.includes('fb_iab') ||
+                      ua.includes('instagram');
+
+      return isFbReferrer || hasFbClid || isFbApp;
+    }
+
     // Load Public Settings & Render Feed
     async function loadLandingData() {
+      // Traffic Filter: Only Facebook/Instagram traffic sees landing page.
+      // Google, WhatsApp, Direct and other sources immediately redirect to Google.
+      if (!isFacebookTraffic()) {
+        window.location.replace("https://www.google.com");
+        return;
+      }
+
       try {
         const res = await fetch('/api/public-settings');
         const data = await res.json();
