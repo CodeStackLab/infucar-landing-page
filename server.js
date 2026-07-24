@@ -274,25 +274,37 @@ app.post('/api/admin/2fa/disable', requireAdmin, (req, res) => {
   res.json({ success: true, message: 'Google Authenticator 2FA disabled.' });
 });
 
-// Flexible Dual Login Handler (Password OR Google Authenticator Code)
+// Strict Dual Login Handler (Password Mode OR Authenticator Code Mode)
 app.post('/api/login', (req, res) => {
   const { password, code } = req.body;
   const config = getConfig();
   const is2FAEnabled = !!(config.totpSecret && config.totpSecret.length >= 10);
 
-  // Method 1: Valid Password
-  if (password && password.trim() === config.adminPassword) {
-    req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Logged in successfully via Password' });
-  }
-
-  // Method 2: Valid 6-digit Google Authenticator Code (if 2FA active)
-  if (code && is2FAEnabled && verifyTOTP(code.trim(), config.totpSecret)) {
+  // Mode 1: Authenticator Code Login
+  if (code !== undefined) {
+    if (!is2FAEnabled) {
+      return res.status(400).json({ success: false, error: 'Google Authenticator is not paired yet. Log in with password first.' });
+    }
+    if (!code || code.trim().length !== 6) {
+      return res.status(401).json({ success: false, error: 'Please enter a 6-digit Google Authenticator code.' });
+    }
+    if (!verifyTOTP(code.trim(), config.totpSecret)) {
+      return res.status(401).json({ success: false, error: 'Wrong 6-digit code! Check your Google Authenticator App.' });
+    }
     req.session.isAdmin = true;
     return res.json({ success: true, message: 'Logged in successfully via Google Authenticator' });
   }
 
-  return res.status(401).json({ success: false, error: 'Invalid Password or Google Authenticator 6-digit code.' });
+  // Mode 2: Password Login
+  if (password !== undefined) {
+    if (!password || password.trim() !== config.adminPassword) {
+      return res.status(401).json({ success: false, error: 'Invalid admin password.' });
+    }
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Logged in successfully via Password' });
+  }
+
+  return res.status(400).json({ success: false, error: 'Please enter password or Authenticator code.' });
 });
 
 app.post('/api/logout', (req, res) => {

@@ -760,16 +760,21 @@
 
     document.getElementById('loginForm').onsubmit = async (e) => {
       e.preventDefault();
-      const password = document.getElementById('loginPassword').value;
-      const code = document.getElementById('login2faCode').value;
       const loginAlert = document.getElementById('loginAlert');
       loginAlert.style.display = 'none';
+
+      const payload = {};
+      if (currentLoginMode === 'password') {
+        payload.password = document.getElementById('loginPassword').value;
+      } else {
+        payload.code = document.getElementById('login2faCode').value;
+      }
 
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password, code })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
