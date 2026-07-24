@@ -382,6 +382,26 @@
 
 
 
+      <!-- Publytics Tracking Code Card (TOP) -->
+      <div class="card">
+        <div class="card-title">📊 Publytics / Analytics Tracking Code</div>
+        <div class="form-group">
+          <label>Paste Script / Pixel Code</label>
+          <textarea id="publyticsInput" placeholder="<script src='https://api.publytics.net/v1/...'></script>"></textarea>
+        </div>
+        <button onclick="saveSettings()" class="btn-primary">Save Tracking Code</button>
+      </div>
+
+      <!-- Change Admin Password Card (TOP) -->
+      <div class="card">
+        <div class="card-title">🔒 Change Admin Password</div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPasswordInput" placeholder="Enter new password" />
+        </div>
+        <button onclick="changePassword()" class="btn-primary">Update Password</button>
+      </div>
+
       <!-- Image Management Card -->
       <div class="card">
         <div class="card-title">🖼️ Image & Target URL Manager</div>
@@ -414,26 +434,6 @@
         <div id="imagesContainer" class="images-grid">
           <!-- Rendered uploaded images cards -->
         </div>
-      </div>
-
-      <!-- Publytics Tracking Code Card -->
-      <div class="card">
-        <div class="card-title">📊 Publytics / Analytics Tracking Code</div>
-        <div class="form-group">
-          <label>Paste Script / Pixel Code</label>
-          <textarea id="publyticsInput" placeholder="<script src='https://api.publytics.net/v1/...'></script>"></textarea>
-        </div>
-        <button onclick="saveSettings()" class="btn-primary">Save Tracking Code</button>
-      </div>
-
-      <!-- Change Admin Password Card -->
-      <div class="card">
-        <div class="card-title">🔒 Change Admin Password</div>
-        <div class="form-group">
-          <label>New Password</label>
-          <input type="password" id="newPasswordInput" placeholder="Enter new password" />
-        </div>
-        <button onclick="changePassword()" class="btn-primary">Update Password</button>
       </div>
 
     </div>
