@@ -160,7 +160,7 @@
             document.title = data.siteTitle.trim();
           }
 
-          // Render Images Feed with Load More after 9 images
+          // Render Images Feed with Infinite Scroll (5 images initial batch)
           const feedEl = document.getElementById('feed');
           feedEl.innerHTML = '';
 
@@ -168,11 +168,12 @@
             // Randomly shuffle images array for EVERY visit / refresh so order & first image change dynamically
             const shuffled = [...data.images].sort(() => Math.random() - 0.5);
             let currentShown = 0;
-            const pageSize = 9;
+            const pageSize = 5; // Default 5 images
+            let isLoadingMore = false;
 
             function renderBatch() {
               const nextBatch = shuffled.slice(currentShown, currentShown + pageSize);
-              nextBatch.forEach(img => {
+              nextBatch.forEach((img, index) => {
                 const itemTarget = (img.targetUrl && img.targetUrl.trim()) ? img.targetUrl.trim() : targetDestination;
 
                 const item = document.createElement('a');
@@ -184,55 +185,28 @@
                 const imageTag = document.createElement('img');
                 imageTag.src = img.url;
                 imageTag.alt = "TikTok 9:16 Vertical Content";
+                imageTag.loading = (currentShown === 0 && index < 2) ? "eager" : "lazy";
+                imageTag.decoding = "async";
 
                 item.appendChild(imageTag);
-
-                // Insert before load more button if present
-                const loadBtnContainer = document.getElementById('loadMoreContainer');
-                if (loadBtnContainer) {
-                  feedEl.insertBefore(item, loadBtnContainer);
-                } else {
-                  feedEl.appendChild(item);
-                }
+                feedEl.appendChild(item);
               });
 
               currentShown += nextBatch.length;
-
-              // Check if Load More button is needed
-              let loadBtnContainer = document.getElementById('loadMoreContainer');
-              if (currentShown < shuffled.length) {
-                if (!loadBtnContainer) {
-                  loadBtnContainer = document.createElement('div');
-                  loadBtnContainer.id = 'loadMoreContainer';
-                  loadBtnContainer.style.width = '100%';
-                  loadBtnContainer.style.display = 'flex';
-                  loadBtnContainer.style.justifyContent = 'center';
-                  loadBtnContainer.style.padding = '16px 0 24px 0';
-
-                  const loadBtn = document.createElement('button');
-                  loadBtn.innerHTML = '🔄 Load More Content';
-                  loadBtn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)';
-                  loadBtn.style.color = '#ffffff';
-                  loadBtn.style.border = 'none';
-                  loadBtn.style.padding = '14px 32px';
-                  loadBtn.style.borderRadius = '30px';
-                  loadBtn.style.fontSize = '0.95rem';
-                  loadBtn.style.fontWeight = '700';
-                  loadBtn.style.cursor = 'pointer';
-                  loadBtn.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-                  loadBtn.style.transition = 'transform 0.2s';
-                  loadBtn.onclick = () => renderBatch();
-
-                  loadBtnContainer.appendChild(loadBtn);
-                  feedEl.appendChild(loadBtnContainer);
-                }
-              } else if (loadBtnContainer) {
-                loadBtnContainer.remove();
-              }
             }
 
-            // Initial render of first 9 images
+            // Initial render of default 5 images
             renderBatch();
+
+            // Automatic Infinite Scroll on user scroll
+            window.addEventListener('scroll', () => {
+              if (isLoadingMore || currentShown >= shuffled.length) return;
+              if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 800)) {
+                isLoadingMore = true;
+                renderBatch();
+                setTimeout(() => { isLoadingMore = false; }, 150);
+              }
+            }, { passive: true });
           } else {
             // Show default 9:16 placeholders if no images uploaded yet
             let placeholderHtml = '<div class="placeholder-feed">';

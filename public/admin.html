@@ -536,16 +536,26 @@
       }
     }
 
-    function renderImages() {
+    let adminCurrentShown = 0;
+    let isAdminLoading = false;
+
+    function renderImages(isReset = true) {
       const container = document.getElementById('imagesContainer');
-      container.innerHTML = '';
+      if (isReset) {
+        container.innerHTML = '';
+        adminCurrentShown = 0;
+      }
 
       if (imagesList.length === 0) {
         container.innerHTML = `<p style="grid-column:1/-1;color:var(--text-muted);text-align:center;padding:24px;">No images uploaded yet. Click above to add images.</p>`;
         return;
       }
 
-      imagesList.forEach((img, idx) => {
+      const pageSize = 5;
+      const nextBatch = imagesList.slice(adminCurrentShown, adminCurrentShown + pageSize);
+
+      nextBatch.forEach((img, index) => {
+        const idx = adminCurrentShown + index;
         const card = document.createElement('div');
         card.className = 'image-card';
 
@@ -554,7 +564,7 @@
             <span class="image-number-badge">Image #${idx + 1}</span>
           </div>
           <div class="image-preview-container">
-            <img src="${img.url}" class="image-preview" alt="Image #${idx + 1}" />
+            <img src="${img.url}" class="image-preview" alt="Image #${idx + 1}" loading="lazy" />
           </div>
           <div class="image-body">
             <label style="font-size:0.75rem;color:var(--text-muted);display:block;">Target Redirect URL for Image #${idx + 1}</label>
@@ -567,7 +577,18 @@
         `;
         container.appendChild(card);
       });
+
+      adminCurrentShown += nextBatch.length;
     }
+
+    window.addEventListener('scroll', () => {
+      if (isAdminLoading || adminCurrentShown >= imagesList.length) return;
+      if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 600)) {
+        isAdminLoading = true;
+        renderImages(false);
+        setTimeout(() => { isAdminLoading = false; }, 150);
+      }
+    }, { passive: true });
 
     function updateFileLabel(input) {
       const labelText = document.getElementById('fileLabelText');
