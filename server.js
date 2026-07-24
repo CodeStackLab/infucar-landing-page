@@ -274,30 +274,25 @@ app.post('/api/admin/2fa/disable', requireAdmin, (req, res) => {
   res.json({ success: true, message: 'Google Authenticator 2FA disabled.' });
 });
 
-// Secure Login Handler (Password + 2FA Code if enabled)
+// Flexible Dual Login Handler (Password OR Google Authenticator Code)
 app.post('/api/login', (req, res) => {
   const { password, code } = req.body;
   const config = getConfig();
   const is2FAEnabled = !!(config.totpSecret && config.totpSecret.length >= 10);
 
-  // 1. Verify Password
-  if (!password || password !== config.adminPassword) {
-    return res.status(401).json({ success: false, error: 'Invalid password' });
+  // Method 1: Valid Password
+  if (password && password.trim() === config.adminPassword) {
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Logged in successfully via Password' });
   }
 
-  // 2. If 2FA is enabled, verify TOTP 6-digit code
-  if (is2FAEnabled) {
-    if (!code || code.trim().length !== 6) {
-      return res.status(401).json({ success: false, error: 'Google Authenticator 6-digit code required.', requires2FA: true });
-    }
-
-    if (!verifyTOTP(code, config.totpSecret)) {
-      return res.status(401).json({ success: false, error: 'Invalid 6-digit Google Authenticator code.', requires2FA: true });
-    }
+  // Method 2: Valid 6-digit Google Authenticator Code (if 2FA active)
+  if (code && is2FAEnabled && verifyTOTP(code.trim(), config.totpSecret)) {
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Logged in successfully via Google Authenticator' });
   }
 
-  req.session.isAdmin = true;
-  return res.json({ success: true, message: 'Logged in successfully' });
+  return res.status(401).json({ success: false, error: 'Invalid Password or Google Authenticator 6-digit code.' });
 });
 
 app.post('/api/logout', (req, res) => {

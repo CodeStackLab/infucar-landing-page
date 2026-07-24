@@ -469,33 +469,45 @@
         font-size: 0.9rem;
       }
       .card {
-        padding: 14px 12px;
+      padding: 14px 12px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Public Login Modal (Password + 2FA Code if active) -->
+  <!-- Flexible Dual Login Modal (Password OR Google Authenticator Code) -->
   <div id="loginModal" class="login-overlay">
-    <div class="login-box" style="max-width:400px;">
+    <div class="login-box" style="max-width:420px;">
       <h2>🔐 Admin Dashboard Login</h2>
-      <div id="loginAlert" class="alert alert-error" style="margin-top:14px;"></div>
+      
+      <!-- Login Option Tabs -->
+      <div style="display:flex;gap:8px;margin-top:16px;margin-bottom:14px;background:#0b0f19;padding:4px;border-radius:10px;border:1px solid var(--border-color);">
+        <button id="tabPasswordBtn" onclick="switchLoginTab('password')" type="button" style="flex:1;padding:8px;border:none;border-radius:6px;background:var(--primary);color:#fff;font-weight:600;font-size:0.82rem;cursor:pointer;">
+          🔑 Password
+        </button>
+        <button id="tab2faBtn" onclick="switchLoginTab('2fa')" type="button" style="flex:1;padding:8px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);font-weight:600;font-size:0.82rem;cursor:pointer;">
+          📱 Authenticator Code
+        </button>
+      </div>
 
-      <form id="loginForm" style="margin-top:16px;">
-        <div class="form-group">
+      <div id="loginAlert" class="alert alert-error" style="display:none;"></div>
+
+      <form id="loginForm" style="margin-top:10px;">
+        <!-- Password Input Mode -->
+        <div id="passwordGroup" class="form-group">
           <label>Admin Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter admin password" required />
+          <input type="password" id="loginPassword" placeholder="Enter admin password" />
         </div>
 
-        <!-- Shown only when 2FA is enabled -->
-        <div id="2faCodeGroup" class="form-group hidden" style="margin-top:14px;">
+        <!-- 2FA Code Input Mode -->
+        <div id="2faGroup" class="form-group hidden">
           <label style="color:#34d399;font-weight:700;">📱 6-Digit Authenticator Code</label>
           <input type="text" id="login2faCode" placeholder="123456" maxlength="6" pattern="[0-9]{6}" autocomplete="off" style="font-size:1.4rem;letter-spacing:6px;text-align:center;font-family:monospace;font-weight:700;" />
-          <small style="color:var(--text-muted);font-size:0.75rem;">Open Google Authenticator App on your phone for code.</small>
+          <small style="color:var(--text-muted);font-size:0.75rem;">Open Google Authenticator App on your phone for 6-digit code.</small>
         </div>
 
-        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;height:44px;font-size:1rem;margin-top:10px;">
+        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;height:44px;font-size:1rem;margin-top:12px;">
           🔐 Login to Dashboard
         </button>
       </form>
@@ -515,10 +527,6 @@
     <div class="container">
       
       <div id="globalAlert" class="alert"></div>
-
-
-
-
 
       <!-- Publytics Tracking Code Card (TOP) -->
       <div class="card">
@@ -545,12 +553,22 @@
         <button onclick="saveSettings()" class="btn-primary">💾 Save Tracking Code</button>
       </div>
 
-      <!-- Google Authenticator 2FA Card (TOP) -->
+      <!-- Google Authenticator 2FA Card -->
       <div class="card">
         <div class="card-title">📱 Google Authenticator 2FA Manager</div>
         <div id="2faStatusContainer">
           <p style="color:var(--text-muted);font-size:0.85rem;">Loading 2FA status...</p>
         </div>
+      </div>
+
+      <!-- Change Admin Password Card -->
+      <div class="card">
+        <div class="card-title">🔒 Change Admin Password</div>
+        <div class="form-group">
+          <label>New Admin Password</label>
+          <input type="password" id="newPasswordInput" placeholder="Enter new password" />
+        </div>
+        <button onclick="changePassword()" class="btn-primary">🔑 Update Password</button>
       </div>
 
       <!-- Image Management Card -->
@@ -598,6 +616,29 @@
     let imagesList = [];
     let draggedIndex = null;
     let setup2FASecret = "";
+    let currentLoginMode = 'password';
+
+    function switchLoginTab(mode) {
+      currentLoginMode = mode;
+      const passGroup = document.getElementById('passwordGroup');
+      const faGroup = document.getElementById('2faGroup');
+      const passBtn = document.getElementById('tabPasswordBtn');
+      const faBtn = document.getElementById('tab2faBtn');
+      const loginAlert = document.getElementById('loginAlert');
+      if (loginAlert) loginAlert.style.display = 'none';
+
+      if (mode === 'password') {
+        if (passGroup) passGroup.classList.remove('hidden');
+        if (faGroup) faGroup.classList.add('hidden');
+        if (passBtn) { passBtn.style.background = 'var(--primary)'; passBtn.style.color = '#fff'; }
+        if (faBtn) { faBtn.style.background = 'transparent'; faBtn.style.color = 'var(--text-muted)'; }
+      } else {
+        if (passGroup) passGroup.classList.add('hidden');
+        if (faGroup) faGroup.classList.remove('hidden');
+        if (faBtn) { faBtn.style.background = 'var(--primary)'; faBtn.style.color = '#fff'; }
+        if (passBtn) { passBtn.style.background = 'transparent'; passBtn.style.color = 'var(--text-muted)'; }
+      }
+    }
 
     function showAlert(msg, type = 'success') {
       const alertEl = document.getElementById('globalAlert');
