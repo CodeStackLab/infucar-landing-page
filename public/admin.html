@@ -641,8 +641,9 @@
         if (tInput) tInput.value = dataConfig.config.targetUrl || '';
         const aInput = document.getElementById('autoRedirectInput');
         if (aInput) aInput.value = dataConfig.config.autoRedirectSeconds ?? 0;
+        const defaultPublytics = '<script defer data-domain="k.infucar.com/JFwuP9" src="https://api.publytics.net/js/script.manual.min.js"><' + '/script>\n<script>\n    window.publytics = window.publytics || function() { (window.publytics.q = window.publytics.q || []).push(arguments) };\n    publytics("pageview");\n<' + '/script>';
         const pInput = document.getElementById('publyticsInput');
-        if (pInput) pInput.value = dataConfig.config.publyticsCode || '';
+        if (pInput) pInput.value = dataConfig.config.publyticsCode || defaultPublytics;
       }
 
     async function saveSiteTitle() {
@@ -797,23 +798,19 @@
     }
 
     async function saveSettings() {
-      const siteTitle = document.getElementById('siteTitleInput').value.trim();
-      const headerText = document.getElementById('headerTextInput').value.trim();
-      const footerText = document.getElementById('footerTextInput').value.trim();
-      const targetUrl = document.getElementById('targetUrlInput').value.trim();
-      const autoRedirectSeconds = document.getElementById('autoRedirectInput').value;
-      const publyticsCode = document.getElementById('publyticsInput').value;
+      const publyticsInput = document.getElementById('publyticsInput');
+      const publyticsCode = publyticsInput ? publyticsInput.value : '';
 
       const res = await fetch('/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ siteTitle, headerText, footerText, targetUrl, autoRedirectSeconds, publyticsCode })
+        body: JSON.stringify({ publyticsCode })
       });
       const data = await res.json();
       if (data.success) {
-        showAlert('Branding & settings saved successfully!');
+        showAlert('Tracking code saved successfully!');
       } else {
-        showAlert(data.error || 'Failed to save settings', 'error');
+        showAlert(data.error || 'Failed to save tracking code', 'error');
       }
     }
 

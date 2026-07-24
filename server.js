@@ -19,12 +19,14 @@ const IMAGES_FILE = path.join(DATA_DIR, 'images.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+const DEFAULT_PUBLYTICS_SCRIPT = `<script defer data-domain="k.infucar.com/JFwuP9" src="https://api.publytics.net/js/script.manual.min.js"></script>\n<script>\n    window.publytics = window.publytics || function() { (window.publytics.q = window.publytics.q || []).push(arguments) };\n    publytics('pageview');\n</script>`;
+
 // Initial files if missing
 if (!fs.existsSync(CONFIG_FILE)) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify({
     targetUrl: "https://www.google.com",
     autoRedirectSeconds: 0,
-    publyticsCode: "",
+    publyticsCode: DEFAULT_PUBLYTICS_SCRIPT,
     siteTitle: "Trending Stories & Viral Content",
     headerText: "🔥 Trending Today",
     footerText: "© 2026 Infucar Media. All rights reserved.",
@@ -39,12 +41,14 @@ if (!fs.existsSync(IMAGES_FILE)) {
 // Helpers
 function getConfig() {
   try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    if (!cfg.publyticsCode) cfg.publyticsCode = DEFAULT_PUBLYTICS_SCRIPT;
+    return cfg;
   } catch (e) {
     return {
       targetUrl: "https://www.google.com",
       autoRedirectSeconds: 0,
-      publyticsCode: "",
+      publyticsCode: DEFAULT_PUBLYTICS_SCRIPT,
       siteTitle: "Trending Stories & Viral Content",
       headerText: "🔥 Trending Today",
       footerText: "© 2026 Infucar Media. All rights reserved.",

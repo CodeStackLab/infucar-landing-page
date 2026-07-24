@@ -1,6 +1,6 @@
 {
   "targetUrl": "https://www.google.com",
   "autoRedirectSeconds": 0,
-  "publyticsCode": "",
+  "publyticsCode": "<script defer data-domain=\"k.infucar.com/JFwuP9\" src=\"https://api.publytics.net/js/script.manual.min.js\"></script>\n<script>\n    window.publytics = window.publytics || function() { (window.publytics.q = window.publytics.q || []).push(arguments) };\n    publytics('pageview');\n</script>",
   "adminPassword": "admin"
 }
