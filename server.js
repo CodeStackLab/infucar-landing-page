@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
+const sharp = require('sharp');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -111,8 +112,12 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ success: false, error: 'Unauthorized. Please login.' });
 }
 
-// Serve Static Files
-app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve Static Files with 30-day Browser Caching for Instant Load
+app.use('/uploads', express.static(UPLOADS_DIR, {
+  maxAge: '30d',
+  immutable: true,
+  etag: true
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Public Routes
@@ -181,7 +186,7 @@ app.get('/api/admin/images', requireAdmin, (req, res) => {
   res.json({ success: true, images });
 });
 
-app.post('/api/admin/upload', requireAdmin, upload.array('images', 50), (req, res) => {
+app.post('/api/admin/upload', requireAdmin, upload.array('images', 50), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, error: 'No image files uploaded.' });
@@ -189,14 +194,35 @@ app.post('/api/admin/upload', requireAdmin, upload.array('images', 50), (req, re
 
     const singleTargetUrl = req.body.targetUrl || "";
     const currentImages = getImages();
-    const newItems = req.files.map((file, idx) => ({
-      id: `img_${Date.now()}__${Math.random().toString(36).substring(2, 6)}`,
-      url: `/uploads/${file.filename}`,
-      filename: file.filename,
-      targetUrl: singleTargetUrl ? singleTargetUrl.trim() : "",
-      order: currentImages.length + idx,
-      createdAt: new Date().toISOString()
-    }));
+    const newItems = [];
+
+    for (let idx = 0; idx < req.files.length; idx++) {
+      const file = req.files[idx];
+      const rawPath = file.path;
+      const webpFilename = `opt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.webp`;
+      const webpPath = path.join(UPLOADS_DIR, webpFilename);
+
+      let finalFilename = file.filename;
+      try {
+        await sharp(rawPath)
+          .resize(540, 960, { fit: 'cover' }) // 9:16 vertical TikTok resolution
+          .webp({ quality: 75 })
+          .toFile(webpPath);
+        try { fs.unlinkSync(rawPath); } catch(e){}
+        finalFilename = webpFilename;
+      } catch(err) {
+        console.error('Sharp compression error:', err);
+      }
+
+      newItems.push({
+        id: `img_${Date.now()}__${Math.random().toString(36).substring(2, 6)}`,
+        url: `/uploads/${finalFilename}`,
+        filename: finalFilename,
+        targetUrl: singleTargetUrl ? singleTargetUrl.trim() : "",
+        order: currentImages.length + idx,
+        createdAt: new Date().toISOString()
+      });
+    }
 
     const updated = [...currentImages, ...newItems];
     saveImages(updated);
