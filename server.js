@@ -222,6 +222,7 @@ app.post('/api/admin/upload', requireAdmin, upload.array('images', 50), async (r
     }
 
     const singleTargetUrl = req.body.targetUrl || "";
+    const singleTimerSeconds = parseInt(req.body.timerSeconds, 10) || 0;
     const currentImages = getImages();
     const newItems = [];
 
@@ -248,6 +249,7 @@ app.post('/api/admin/upload', requireAdmin, upload.array('images', 50), async (r
         url: `/uploads/${finalFilename}`,
         filename: finalFilename,
         targetUrl: singleTargetUrl ? singleTargetUrl.trim() : "",
+        timerSeconds: singleTimerSeconds,
         order: currentImages.length + idx,
         createdAt: new Date().toISOString()
       });
@@ -305,11 +307,12 @@ app.post('/api/admin/images/reorder', requireAdmin, (req, res) => {
 });
 
 app.post('/api/admin/images/update', requireAdmin, (req, res) => {
-  const { id, targetUrl, order } = req.body;
+  const { id, targetUrl, timerSeconds, order } = req.body;
   let images = getImages();
   const img = images.find(i => i.id === id);
   if (img) {
     if (targetUrl !== undefined) img.targetUrl = targetUrl.trim();
+    if (timerSeconds !== undefined) img.timerSeconds = parseInt(timerSeconds, 10) || 0;
     if (order !== undefined) img.order = parseInt(order, 10) || 0;
 
     images.sort((a, b) => (a.order || 0) - (b.order || 0));

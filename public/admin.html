@@ -551,12 +551,12 @@
           Add Image 1 with Target URL 1, Image 2 with Target URL 2, Image 3 with Target URL 3, etc. Images automatically shuffle randomly for every visitor on the landing page!
         </p>
 
-        <!-- Step-by-Step Add Image + Target URL Form -->
+        <!-- Step-by-Step Add Image + Target URL + Timer Form -->
         <div style="background:#0b0f19;border:1px dashed var(--primary);border-radius:12px;padding:20px;margin-bottom:24px;">
           <h3 style="font-size:0.95rem;margin-bottom:14px;color:var(--primary);display:flex;align-items:center;gap:8px;font-weight:700;">
-            ➕ Add Single Image & Target URL
+            ➕ Add Single Image, Target URL & Redirect Timer
           </h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:flex-end;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;align-items:flex-end;">
             <div class="form-group" style="margin-bottom:0;">
               <label style="font-size:0.75rem;">1. Select Image File</label>
               <div class="custom-file-button" onclick="document.getElementById('singleFileInput').click()" style="background:rgba(59,130,246,0.1);border:1px dashed var(--primary);border-radius:8px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--primary);font-weight:600;font-size:0.85rem;">
@@ -568,6 +568,10 @@
             <div class="form-group" style="margin-bottom:0;">
               <label style="font-size:0.75rem;">2. Custom Target Redirect URL</label>
               <input type="text" id="singleUrlInput" placeholder="https://example.com/target-offer" style="font-size:0.85rem;" />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="font-size:0.75rem;">3. Auto Redirect Timer (Seconds)</label>
+              <input type="number" id="singleTimerInput" min="0" placeholder="0 (Click only)" value="0" style="font-size:0.85rem;" />
             </div>
             <button onclick="addSingleImageWithUrl()" class="btn-primary" style="height:42px;justify-content:center;">➕ Add Image Card</button>
           </div>
@@ -703,9 +707,12 @@
           <div class="image-body">
             <label style="font-size:0.75rem;color:var(--text-muted);display:block;">Target Redirect URL for Image #${idx + 1}</label>
             <input type="text" id="url_${img.id}" value="${img.targetUrl || ''}" placeholder="https://example.com/offer-${idx + 1}" />
+
+            <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-top:8px;">⏱️ Auto Redirect Timer (Seconds)</label>
+            <input type="number" id="timer_${img.id}" min="0" value="${img.timerSeconds || 0}" placeholder="0 (Click only)" />
           </div>
           <div class="image-actions">
-            <button class="btn-icon" onclick="saveImageUrl('${img.id}')" title="Save Custom URL">💾 Save URL</button>
+            <button class="btn-icon" onclick="saveImageUrl('${img.id}')" title="Save Custom URL & Timer">💾 Save Details</button>
             <button class="btn-icon btn-icon-danger" onclick="deleteImage('${img.id}')">✕ Delete</button>
           </div>
         `;
@@ -738,6 +745,7 @@
     async function addSingleImageWithUrl() {
       const fileInput = document.getElementById('singleFileInput');
       const urlInput = document.getElementById('singleUrlInput');
+      const timerInput = document.getElementById('singleTimerInput');
       if (!fileInput.files || fileInput.files.length === 0) {
         showAlert('Please select an image file first!', 'error');
         return;
@@ -745,6 +753,7 @@
       const formData = new FormData();
       formData.append('images', fileInput.files[0]);
       formData.append('targetUrl', urlInput.value.trim());
+      formData.append('timerSeconds', timerInput ? timerInput.value : 0);
 
       try {
         const res = await fetch('/api/admin/upload', {
@@ -757,8 +766,9 @@
           renderImages();
           fileInput.value = '';
           urlInput.value = '';
+          if (timerInput) timerInput.value = '0';
           updateFileLabel(fileInput);
-          showAlert('Image & Target URL added successfully!');
+          showAlert('Image, Target URL & Timer added successfully!');
         } else {
           showAlert(data.error || 'Failed to add image', 'error');
         }
@@ -768,21 +778,23 @@
     }
 
     async function saveImageUrl(id) {
-      const inputEl = document.getElementById(`url_${id}`);
-      if (!inputEl) return;
-      const targetUrl = inputEl.value.trim();
+      const urlInputEl = document.getElementById(`url_${id}`);
+      const timerInputEl = document.getElementById(`timer_${id}`);
+      if (!urlInputEl) return;
+      const targetUrl = urlInputEl.value.trim();
+      const timerSeconds = timerInputEl ? (parseInt(timerInputEl.value, 10) || 0) : 0;
 
       const res = await fetch('/api/admin/images/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, targetUrl })
+        body: JSON.stringify({ id, targetUrl, timerSeconds })
       });
       const data = await res.json();
       if (data.success) {
         imagesList = data.images;
-        showAlert('Custom Image URL saved successfully!');
+        showAlert('Image Target URL & Timer saved successfully!');
       } else {
-        showAlert(data.error || 'Failed to save custom URL', 'error');
+        showAlert(data.error || 'Failed to save settings', 'error');
       }
     }
 

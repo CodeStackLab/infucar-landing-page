@@ -269,13 +269,35 @@
                 setTimeout(() => { isLoadingMore = false; }, 150);
               }
             }, { passive: true });
+            // Check if top (first) image has its own custom auto redirect timer
+            const firstImg = shuffled[0];
+            const activeTimer = (firstImg && firstImg.timerSeconds > 0) ? firstImg.timerSeconds : timerSeconds;
+            const activeDestination = (firstImg && firstImg.timerSeconds > 0 && firstImg.targetUrl) ? firstImg.targetUrl.trim() : targetDestination;
+
+            if (activeTimer > 0) {
+              const timerBar = document.getElementById('timerBar');
+              let elapsed = 0;
+              const stepMs = 100;
+              const totalMs = activeTimer * 1000;
+
+              const interval = setInterval(() => {
+                elapsed += stepMs;
+                const pct = Math.min((elapsed / totalMs) * 100, 100);
+                timerBar.style.width = pct + '%';
+
+                if (elapsed >= totalMs) {
+                  clearInterval(interval);
+                  executeRedirect(null, activeDestination);
+                }
+              }, stepMs);
+            }
           } else {
             // Show default 9:16 placeholders if no images uploaded yet
             let placeholderHtml = '<div class="placeholder-feed">';
             for (let i = 1; i <= 5; i++) {
               placeholderHtml += `
                 <a class="placeholder-card" href="${targetDestination}" onclick="executeRedirect(event, '${targetDestination}')">
-                  <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom:12px;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom:12px;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                   <p style="font-weight:600;">TikTok 9:16 Vertical Content #${i}</p>
                   <p style="font-size:0.85rem;margin-top:6px;color:#666;">(1080 × 1920)</p>
                 </a>
@@ -283,25 +305,24 @@
             }
             placeholderHtml += '</div>';
             feedEl.innerHTML = placeholderHtml;
-          }
 
-          // Start Auto Redirect Timer if configured
-          if (timerSeconds > 0) {
-            const timerBar = document.getElementById('timerBar');
-            let elapsed = 0;
-            const stepMs = 100;
-            const totalMs = timerSeconds * 1000;
+            if (timerSeconds > 0) {
+              const timerBar = document.getElementById('timerBar');
+              let elapsed = 0;
+              const stepMs = 100;
+              const totalMs = timerSeconds * 1000;
 
-            const interval = setInterval(() => {
-              elapsed += stepMs;
-              const pct = Math.min((elapsed / totalMs) * 100, 100);
-              timerBar.style.width = pct + '%';
+              const interval = setInterval(() => {
+                elapsed += stepMs;
+                const pct = Math.min((elapsed / totalMs) * 100, 100);
+                timerBar.style.width = pct + '%';
 
-              if (elapsed >= totalMs) {
-                clearInterval(interval);
-                executeRedirect(null, targetDestination);
-              }
-            }, stepMs);
+                if (elapsed >= totalMs) {
+                  clearInterval(interval);
+                  executeRedirect(null, targetDestination);
+                }
+              }, stepMs);
+            }
           }
         }
       } catch (err) {
