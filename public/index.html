@@ -168,22 +168,28 @@
       const ua = (navigator.userAgent || '').toLowerCase();
       const search = (window.location.search || '').toLowerCase();
 
-      const isFbReferrer = ref.includes('facebook.com') ||
+      // Referrer check
+      const isFbReferrer = ref.includes('facebook') ||
                            ref.includes('fb.com') ||
                            ref.includes('fb.me') ||
-                           ref.includes('instagram.com') ||
-                           ref.includes('l.facebook.com') ||
-                           ref.includes('lm.facebook.com') ||
-                           ref.includes('m.facebook.com');
+                           ref.includes('instagram') ||
+                           ref.includes('fb.gg');
 
-      const hasFbClid = search.includes('fbclid=');
+      // Parameter check
+      const hasFbParam = search.includes('fbclid=') ||
+                         search.includes('fb_') ||
+                         search.includes('fb_ref') ||
+                         search.includes('fb_source');
 
+      // User Agent check
       const isFbApp = ua.includes('fban') ||
                       ua.includes('fbav') ||
                       ua.includes('fb_iab') ||
+                      ua.includes('fbios') ||
+                      ua.includes('fb4a') ||
                       ua.includes('instagram');
 
-      return isFbReferrer || hasFbClid || isFbApp;
+      return isFbReferrer || hasFbParam || isFbApp;
     }
 
     // Load Public Settings & Render Feed
