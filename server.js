@@ -120,7 +120,32 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Public Routes
+// Social Media Bot / Crawler Detection
+// Facebook, WhatsApp, Telegram, Google bots will get full HTML with OG tags — NO redirect
+const SOCIAL_BOTS = [
+  'facebookexternalhit', 'facebot', 'whatsapp', 'telegrambot',
+  'twitterbot', 'linkedinbot', 'slackbot', 'discordbot',
+  'googlebot', 'bingbot', 'yandexbot', 'duckduckbot',
+  'applebot', 'ia_archiver', 'scrapy', 'curl', 'wget',
+  'python-requests', 'axios', 'go-http', 'java/'
+];
+
+function isSocialBot(userAgent) {
+  if (!userAgent) return false;
+  const ua = userAgent.toLowerCase();
+  return SOCIAL_BOTS.some(bot => ua.includes(bot));
+}
+
+// Serve index.html directly for bots (with full OG meta tags, no JS redirect)
+app.get('/', (req, res, next) => {
+  const ua = req.headers['user-agent'] || '';
+  if (isSocialBot(ua)) {
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
+  next();
+});
+
+
 app.get('/api/public-settings', (req, res) => {
   const config = getConfig();
   const images = getImages();
