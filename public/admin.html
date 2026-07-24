@@ -352,6 +352,126 @@
     .hidden {
       display: none !important;
     }
+
+    /* ====== MOBILE RESPONSIVE ====== */
+    @media (max-width: 600px) {
+      /* Navbar */
+      .navbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .navbar h1 {
+        font-size: 1rem;
+        white-space: nowrap;
+      }
+      .navbar > div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+      .navbar > div a {
+        font-size: 0.8rem;
+        white-space: nowrap;
+      }
+      .btn-logout {
+        padding: 6px 12px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      /* Container */
+      .container {
+        margin: 16px auto;
+        padding: 0 12px;
+        gap: 16px;
+      }
+
+      /* Card */
+      .card {
+        padding: 16px;
+        border-radius: 12px;
+      }
+      .card-title {
+        font-size: 1rem;
+        margin-bottom: 14px;
+      }
+
+      /* Forms */
+      input[type="text"],
+      input[type="number"],
+      input[type="password"],
+      textarea {
+        font-size: 0.9rem;
+        padding: 10px 12px;
+      }
+      label {
+        font-size: 0.78rem;
+      }
+
+      /* Buttons */
+      .btn-primary {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+      }
+
+      /* Image Grid — single column on mobile */
+      .images-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      /* Image card actions — wrap buttons */
+      .image-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .btn-icon {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.78rem;
+        padding: 7px 8px;
+      }
+
+      /* Upload add form — single column */
+      .custom-file-button {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+      }
+
+      /* Tracking badge */
+      [style*="Active Tracking ID"] {
+        font-size: 0.8rem;
+      }
+
+      /* Alert */
+      .alert {
+        font-size: 0.85rem;
+        padding: 10px 14px;
+      }
+
+      /* Login Box */
+      .login-box {
+        padding: 24px 20px;
+        border-radius: 14px;
+      }
+      .login-box h2 {
+        font-size: 1.15rem;
+        margin-bottom: 18px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .navbar h1 {
+        font-size: 0.9rem;
+      }
+      .card {
+        padding: 14px 12px;
+      }
+    }
   </style>
 </head>
 <body>
