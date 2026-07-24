@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Landing Page Manager</title>
+  <title>Admin Dashboard - Infucar Manager</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%230f172a'/%3E%3Cpath d='M38 28 L72 50 L38 72 Z' fill='%23ec4899'/%3E%3C/svg%3E">
   <!-- Publytics Analytics -->
   <script defer data-domain="k.infucar.com/JFwuP9" src="https://api.publytics.net/js/script.manual.min.js"></script>
   <script>
@@ -391,11 +392,26 @@
       <!-- Publytics Tracking Code Card (TOP) -->
       <div class="card">
         <div class="card-title">📊 Publytics / Analytics Tracking Code</div>
-        <div class="form-group">
-          <label>Paste Script / Pixel Code</label>
-          <textarea id="publyticsInput" placeholder="<script src='https://api.publytics.net/v1/...'></script>"></textarea>
+
+        <!-- Tracking ID Status Badge -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#0b0f19;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 16px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;flex-shrink:0;"></div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Active Tracking ID</div>
+            <div style="font-family:monospace;font-size:0.9rem;color:#34d399;font-weight:700;margin-top:2px;">k.infucar.com/JFwuP9</div>
+          </div>
+          <div style="margin-left:auto;font-size:0.78rem;color:#10b981;background:rgba(16,185,129,0.1);padding:4px 10px;border-radius:20px;font-weight:600;">✅ Live</div>
         </div>
-        <button onclick="saveSettings()" class="btn-primary">Save Tracking Code</button>
+
+        <div class="form-group">
+          <label>Current Tracking Script</label>
+          <textarea id="publyticsInput" style="font-size:0.8rem;line-height:1.5;"><script defer data-domain="k.infucar.com/JFwuP9" src="https://api.publytics.net/js/script.manual.min.js"></script>
+<script>
+    window.publytics = window.publytics || function() { (window.publytics.q = window.publytics.q || []).push(arguments) };
+    publytics('pageview');
+</script></textarea>
+        </div>
+        <button onclick="saveSettings()" class="btn-primary">💾 Save Tracking Code</button>
       </div>
 
       <!-- Change Admin Password Card (TOP) -->
