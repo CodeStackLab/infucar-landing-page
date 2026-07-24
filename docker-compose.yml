@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  infucar-landing:
+    build: .
+    container_name: infucar-landing-app
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SESSION_SECRET=infucar_landing_secret_key_2026
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads

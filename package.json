@@ -1,0 +1,18 @@
+{
+  "name": "infucar-landing-page",
+  "version": "1.0.0",
+  "description": "TikTok 9:16 Vertical Landing Page with Admin Panel & Auto Redirect for k.infucar.com",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.0.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

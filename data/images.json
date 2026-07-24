@@ -1,0 +1,122 @@
+[
+  {
+    "id": "img_sample_1",
+    "url": "/uploads/img_1.png",
+    "filename": "img_1.png",
+    "targetUrl": "https://www.google.com",
+    "order": 0,
+    "createdAt": "2026-07-24T20:53:11.000Z"
+  },
+  {
+    "id": "img_sample_2",
+    "url": "/uploads/img_2.png",
+    "filename": "img_2.png",
+    "targetUrl": "https://www.google.com",
+    "order": 1,
+    "createdAt": "2026-07-24T20:53:12.000Z"
+  },
+  {
+    "id": "img_sample_3",
+    "url": "/uploads/img_3.png",
+    "filename": "img_3.png",
+    "targetUrl": "https://www.google.com",
+    "order": 2,
+    "createdAt": "2026-07-24T20:53:13.000Z"
+  },
+  {
+    "id": "img_sample_4",
+    "url": "/uploads/img_4.png",
+    "filename": "img_4.png",
+    "targetUrl": "https://www.google.com",
+    "order": 3,
+    "createdAt": "2026-07-24T20:53:14.000Z"
+  },
+  {
+    "id": "img_sample_5",
+    "url": "/uploads/img_5.png",
+    "filename": "img_5.png",
+    "targetUrl": "https://www.google.com",
+    "order": 4,
+    "createdAt": "2026-07-24T20:53:15.000Z"
+  },
+  {
+    "id": "img_sample_6",
+    "url": "/uploads/img_6.png",
+    "filename": "img_6.png",
+    "targetUrl": "https://www.google.com",
+    "order": 5,
+    "createdAt": "2026-07-24T20:53:16.000Z"
+  },
+  {
+    "id": "img_sample_7",
+    "url": "/uploads/img_7.png",
+    "filename": "img_7.png",
+    "targetUrl": "https://www.google.com",
+    "order": 6,
+    "createdAt": "2026-07-24T20:53:17.000Z"
+  },
+  {
+    "id": "img_sample_8",
+    "url": "/uploads/img_8.png",
+    "filename": "img_8.png",
+    "targetUrl": "https://www.google.com",
+    "order": 7,
+    "createdAt": "2026-07-24T20:53:18.000Z"
+  },
+  {
+    "id": "img_sample_9",
+    "url": "/uploads/img_9.png",
+    "filename": "img_9.png",
+    "targetUrl": "https://www.google.com",
+    "order": 8,
+    "createdAt": "2026-07-24T20:53:19.000Z"
+  },
+  {
+    "id": "img_sample_10",
+    "url": "/uploads/img_10.png",
+    "filename": "img_10.png",
+    "targetUrl": "https://www.google.com",
+    "order": 9,
+    "createdAt": "2026-07-24T20:53:20.000Z"
+  },
+  {
+    "id": "img_sample_11",
+    "url": "/uploads/img_11.png",
+    "filename": "img_11.png",
+    "targetUrl": "https://www.google.com",
+    "order": 10,
+    "createdAt": "2026-07-24T20:53:21.000Z"
+  },
+  {
+    "id": "img_sample_12",
+    "url": "/uploads/img_12.png",
+    "filename": "img_12.png",
+    "targetUrl": "https://www.google.com",
+    "order": 11,
+    "createdAt": "2026-07-24T20:53:22.000Z"
+  },
+  {
+    "id": "img_sample_13",
+    "url": "/uploads/img_13.png",
+    "filename": "img_13.png",
+    "targetUrl": "https://www.google.com",
+    "order": 12,
+    "createdAt": "2026-07-24T20:53:23.000Z"
+  },
+  {
+    "id": "img_sample_14",
+    "url": "/uploads/img_14.png",
+    "filename": "img_14.png",
+    "targetUrl": "https://www.google.com",
+    "order": 13,
+    "createdAt": "2026-07-24T20:53:24.000Z"
+  },
+  {
+    "id": "img_sample_15",
+    "url": "/uploads/img_15.png",
+    "filename": "img_15.png",
+    "targetUrl": "https://www.google.com",
+    "order": 14,
+    "createdAt": "2026-07-24T20:53:25.000Z"
+  }
+]
