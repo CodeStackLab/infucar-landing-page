@@ -6,6 +6,59 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const sharp = require('sharp');
+const crypto = require('crypto');
+
+// TOTP Helpers (Google Authenticator RFC 6238)
+function base32Decode(base32) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  let hex = '';
+  const cleaned = base32.replace(/=+$/, '').toUpperCase();
+  for (let i = 0; i < cleaned.length; i++) {
+    const val = alphabet.indexOf(cleaned.charAt(i));
+    if (val === -1) continue;
+    bits += val.toString(2).padStart(5, '0');
+  }
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    const chunk = bits.substr(i, 8);
+    hex += parseInt(chunk, 2).toString(16).padStart(2, '0');
+  }
+  return Buffer.from(hex, 'hex');
+}
+
+function generateBase32Secret(length = 16) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const randomBytes = crypto.randomBytes(length);
+  let secret = '';
+  for (let i = 0; i < length; i++) {
+    secret += alphabet[randomBytes[i] % alphabet.length];
+  }
+  return secret;
+}
+
+function getTOTP(secret, time = Math.floor(Date.now() / 1000)) {
+  const timeStep = 30;
+  const counter = Math.floor(time / timeStep);
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64BE(BigInt(counter));
+  const key = base32Decode(secret);
+  const hmac = crypto.createHmac('sha1', key).update(buf).digest();
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const code = ((hmac[offset] & 0x7f) << 24 |
+                (hmac[offset + 1] & 0xff) << 16 |
+                (hmac[offset + 2] & 0xff) << 8 |
+                (hmac[offset + 3] & 0xff)) % 1000000;
+  return code.toString().padStart(6, '0');
+}
+
+function verifyTOTP(token, secret) {
+  if (!token || !secret) return false;
+  const now = Math.floor(Date.now() / 1000);
+  for (let win = -1; win <= 1; win++) {
+    if (getTOTP(secret, now + win * 30) === token.trim()) return true;
+  }
+  return false;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -165,17 +218,93 @@ app.get('/api/public-settings', (req, res) => {
   });
 });
 
-// Admin Auth Routes
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
+// Admin 2FA Auth Routes (Google Authenticator TOTP)
+app.get('/api/2fa/info', (req, res) => {
   const config = getConfig();
-  
+  const isConfigured = !!(config.totpSecret && config.totpSecret.length >= 10);
+
+  if (!isConfigured) {
+    if (!req.session.tempTotpSecret) {
+      req.session.tempTotpSecret = generateBase32Secret(16);
+    }
+    const secret = req.session.tempTotpSecret;
+    const otpauthUrl = `otpauth://totp/Infucar%20Admin:k.infucar.com?secret=${secret}&issuer=Infucar`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(otpauthUrl)}`;
+
+    return res.json({
+      isConfigured: false,
+      secret: secret,
+      qrCodeUrl: qrCodeUrl
+    });
+  }
+
+  return res.json({
+    isConfigured: true
+  });
+});
+
+app.post('/api/2fa/verify', (req, res) => {
+  const { code, password } = req.body;
+  const config = getConfig();
+  const isConfigured = !!(config.totpSecret && config.totpSecret.length >= 10);
+
+  // Password fallback login
+  if (password && password === config.adminPassword) {
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Logged in via Admin Password' });
+  }
+
+  if (!code || code.trim().length !== 6) {
+    return res.status(400).json({ success: false, error: 'Please enter a valid 6-digit Google Authenticator code.' });
+  }
+
+  // Initial 2FA Pairing
+  if (!isConfigured) {
+    const tempSecret = req.session.tempTotpSecret;
+    if (!tempSecret) {
+      return res.status(400).json({ success: false, error: 'Setup session expired. Please refresh the page.' });
+    }
+    if (verifyTOTP(code, tempSecret)) {
+      config.totpSecret = tempSecret;
+      saveConfig(config);
+      delete req.session.tempTotpSecret;
+      req.session.isAdmin = true;
+      return res.json({ success: true, message: 'Google Authenticator paired & logged in!' });
+    }
+    return res.status(400).json({ success: false, error: 'Invalid 6-digit code. Check your Google Authenticator app.' });
+  }
+
+  // Regular 2FA Login
+  if (verifyTOTP(code, config.totpSecret)) {
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Google Authenticator verified! Logged in.' });
+  }
+
+  return res.status(401).json({ success: false, error: 'Invalid 6-digit code. Try again.' });
+});
+
+app.post('/api/admin/2fa/reset', requireAdmin, (req, res) => {
+  const config = getConfig();
+  delete config.totpSecret;
+  saveConfig(config);
+  res.json({ success: true, message: 'Google Authenticator reset successfully! You can pair a new phone.' });
+});
+
+app.post('/api/login', (req, res) => {
+  const { password, code } = req.body;
+  const config = getConfig();
+
   if (password === config.adminPassword) {
     req.session.isAdmin = true;
     return res.json({ success: true, message: 'Logged in successfully' });
   }
+
+  if (code && config.totpSecret && verifyTOTP(code, config.totpSecret)) {
+    req.session.isAdmin = true;
+    return res.json({ success: true, message: 'Logged in via Google Authenticator' });
+  }
   
-  return res.status(401).json({ success: false, error: 'Invalid password' });
+  return res.status(401).json({ success: false, error: 'Invalid password or Google Authenticator code' });
 });
 
 app.post('/api/logout', (req, res) => {
