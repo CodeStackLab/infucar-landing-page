@@ -218,93 +218,86 @@ app.get('/api/public-settings', (req, res) => {
   });
 });
 
-// Admin 2FA Auth Routes (Google Authenticator TOTP)
-app.get('/api/2fa/info', (req, res) => {
+// Public 2FA Status
+app.get('/api/2fa/status', (req, res) => {
   const config = getConfig();
-  const isConfigured = !!(config.totpSecret && config.totpSecret.length >= 10);
+  const isEnabled = !!(config.totpSecret && config.totpSecret.length >= 10);
+  res.json({ isEnabled });
+});
 
-  if (!isConfigured) {
-    if (!req.session.tempTotpSecret) {
-      req.session.tempTotpSecret = generateBase32Secret(16);
-    }
-    const secret = req.session.tempTotpSecret;
-    const otpauthUrl = `otpauth://totp/Infucar%20Admin:k.infucar.com?secret=${secret}&issuer=Infucar`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(otpauthUrl)}`;
+// Protected 2FA Setup API (Requires logged-in admin session)
+app.get('/api/admin/2fa/setup', requireAdmin, (req, res) => {
+  const config = getConfig();
+  const isEnabled = !!(config.totpSecret && config.totpSecret.length >= 10);
 
-    return res.json({
-      isConfigured: false,
-      secret: secret,
-      qrCodeUrl: qrCodeUrl
-    });
+  if (!req.session.tempTotpSecret) {
+    req.session.tempTotpSecret = generateBase32Secret(16);
   }
+  const secret = req.session.tempTotpSecret;
+  const otpauthUrl = `otpauth://totp/Infucar%20Admin:k.infucar.com?secret=${secret}&issuer=Infucar`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(otpauthUrl)}`;
 
   return res.json({
-    isConfigured: true
+    isEnabled: isEnabled,
+    secret: secret,
+    qrCodeUrl: qrCodeUrl
   });
 });
 
-app.post('/api/2fa/verify', (req, res) => {
-  const { code, password } = req.body;
+app.post('/api/admin/2fa/enable', requireAdmin, (req, res) => {
+  const { code, secret } = req.body;
   const config = getConfig();
-  const isConfigured = !!(config.totpSecret && config.totpSecret.length >= 10);
-
-  // Password fallback login
-  if (password && password === config.adminPassword) {
-    req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Logged in via Admin Password' });
-  }
 
   if (!code || code.trim().length !== 6) {
-    return res.status(400).json({ success: false, error: 'Please enter a valid 6-digit Google Authenticator code.' });
+    return res.status(400).json({ success: false, error: 'Please enter a valid 6-digit code.' });
   }
 
-  // Initial 2FA Pairing
-  if (!isConfigured) {
-    const tempSecret = req.session.tempTotpSecret;
-    if (!tempSecret) {
-      return res.status(400).json({ success: false, error: 'Setup session expired. Please refresh the page.' });
-    }
-    if (verifyTOTP(code, tempSecret)) {
-      config.totpSecret = tempSecret;
-      saveConfig(config);
-      delete req.session.tempTotpSecret;
-      req.session.isAdmin = true;
-      return res.json({ success: true, message: 'Google Authenticator paired & logged in!' });
-    }
-    return res.status(400).json({ success: false, error: 'Invalid 6-digit code. Check your Google Authenticator app.' });
+  const setupSecret = secret || req.session.tempTotpSecret;
+  if (!setupSecret) {
+    return res.status(400).json({ success: false, error: 'Setup secret not found. Please refresh page.' });
   }
 
-  // Regular 2FA Login
-  if (verifyTOTP(code, config.totpSecret)) {
-    req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Google Authenticator verified! Logged in.' });
+  if (verifyTOTP(code, setupSecret)) {
+    config.totpSecret = setupSecret;
+    saveConfig(config);
+    delete req.session.tempTotpSecret;
+    return res.json({ success: true, message: 'Google Authenticator 2FA enabled successfully!' });
   }
 
-  return res.status(401).json({ success: false, error: 'Invalid 6-digit code. Try again.' });
+  return res.status(400).json({ success: false, error: 'Invalid 6-digit code. Check your Google Authenticator app.' });
 });
 
-app.post('/api/admin/2fa/reset', requireAdmin, (req, res) => {
+app.post('/api/admin/2fa/disable', requireAdmin, (req, res) => {
   const config = getConfig();
   delete config.totpSecret;
   saveConfig(config);
-  res.json({ success: true, message: 'Google Authenticator reset successfully! You can pair a new phone.' });
+  res.json({ success: true, message: 'Google Authenticator 2FA disabled.' });
 });
 
+// Secure Login Handler (Password + 2FA Code if enabled)
 app.post('/api/login', (req, res) => {
   const { password, code } = req.body;
   const config = getConfig();
+  const is2FAEnabled = !!(config.totpSecret && config.totpSecret.length >= 10);
 
-  if (password === config.adminPassword) {
-    req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Logged in successfully' });
+  // 1. Verify Password
+  if (!password || password !== config.adminPassword) {
+    return res.status(401).json({ success: false, error: 'Invalid password' });
   }
 
-  if (code && config.totpSecret && verifyTOTP(code, config.totpSecret)) {
-    req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Logged in via Google Authenticator' });
+  // 2. If 2FA is enabled, verify TOTP 6-digit code
+  if (is2FAEnabled) {
+    if (!code || code.trim().length !== 6) {
+      return res.status(401).json({ success: false, error: 'Google Authenticator 6-digit code required.', requires2FA: true });
+    }
+
+    if (!verifyTOTP(code, config.totpSecret)) {
+      return res.status(401).json({ success: false, error: 'Invalid 6-digit Google Authenticator code.', requires2FA: true });
+    }
   }
-  
-  return res.status(401).json({ success: false, error: 'Invalid password or Google Authenticator code' });
+
+  req.session.isAdmin = true;
+  return res.json({ success: true, message: 'Logged in successfully' });
 });
 
 app.post('/api/logout', (req, res) => {

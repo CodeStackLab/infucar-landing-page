@@ -476,64 +476,28 @@
 </head>
 <body>
 
-  <!-- Login Modal (Google Authenticator 2FA) -->
+  <!-- Public Login Modal (Password + 2FA Code if active) -->
   <div id="loginModal" class="login-overlay">
-    <div class="login-box" style="max-width:440px;">
-      <div id="2faHeader">
-        <h2 style="font-size:1.3rem;display:flex;align-items:center;justify-content:center;gap:10px;">
-          📱 Google Authenticator 2FA
-        </h2>
-      </div>
-
+    <div class="login-box" style="max-width:400px;">
+      <h2>🔐 Admin Dashboard Login</h2>
       <div id="loginAlert" class="alert alert-error" style="margin-top:14px;"></div>
 
-      <!-- 2FA Verification / Login Form -->
-      <form id="2faForm" style="margin-top:16px;">
-        <!-- Setup Mode UI (Shown when 2FA is not yet paired) -->
-        <div id="setupContainer" class="hidden" style="text-align:center;background:#0b0f19;border:1px dashed var(--primary);border-radius:12px;padding:16px;margin-bottom:16px;">
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">
-            1. Open <b>Google Authenticator App</b> on your phone.<br>
-            2. Scan this QR Code or enter Key manually:
-          </p>
-          <div style="background:#fff;padding:10px;display:inline-block;border-radius:10px;margin-bottom:12px;">
-            <img id="qrCodeImg" src="" alt="Google Authenticator QR Code" style="width:160px;height:160px;display:block;" />
-          </div>
-          <div style="font-family:monospace;font-size:0.85rem;color:#34d399;font-weight:700;letter-spacing:1px;background:rgba(16,185,129,0.1);padding:6px 12px;border-radius:6px;word-break:break-all;">
-            Key: <span id="setupSecretKey">...</span>
-          </div>
-        </div>
-
+      <form id="loginForm" style="margin-top:16px;">
         <div class="form-group">
-          <label id="totpLabel" style="font-size:0.85rem;">Enter 6-Digit Authenticator Code</label>
-          <input type="text" id="totpCodeInput" placeholder="123456" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required style="font-size:1.4rem;letter-spacing:6px;text-align:center;font-family:monospace;font-weight:700;" />
+          <label>Admin Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter admin password" required />
         </div>
 
-        <button type="submit" id="totpSubmitBtn" class="btn-primary" style="width:100%;justify-content:center;height:44px;font-size:1rem;">
-          🔐 Verify & Login
+        <!-- Shown only when 2FA is enabled -->
+        <div id="2faCodeGroup" class="form-group hidden" style="margin-top:14px;">
+          <label style="color:#34d399;font-weight:700;">📱 6-Digit Authenticator Code</label>
+          <input type="text" id="login2faCode" placeholder="123456" maxlength="6" pattern="[0-9]{6}" autocomplete="off" style="font-size:1.4rem;letter-spacing:6px;text-align:center;font-family:monospace;font-weight:700;" />
+          <small style="color:var(--text-muted);font-size:0.75rem;">Open Google Authenticator App on your phone for code.</small>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;height:44px;font-size:1rem;margin-top:10px;">
+          🔐 Login to Dashboard
         </button>
-
-        <!-- Toggle for Admin Password Fallback -->
-        <div style="text-align:center;margin-top:16px;">
-          <a href="#" id="togglePasswordMode" style="color:var(--text-muted);font-size:0.8rem;text-decoration:underline;">
-            Lost phone? Login with Admin Password instead
-          </a>
-        </div>
-      </form>
-
-      <!-- Password Fallback Form (Hidden by default) -->
-      <form id="passwordFallbackForm" class="hidden" style="margin-top:16px;">
-        <div class="form-group">
-          <label>Admin Fallback Password</label>
-          <input type="password" id="fallbackPasswordInput" placeholder="Enter admin password" required />
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">
-          Login with Password
-        </button>
-        <div style="text-align:center;margin-top:14px;">
-          <a href="#" id="toggleTotpMode" style="color:var(--primary);font-size:0.8rem;text-decoration:underline;">
-            ← Back to Google Authenticator Code
-          </a>
-        </div>
       </form>
     </div>
   </div>
@@ -581,15 +545,12 @@
         <button onclick="saveSettings()" class="btn-primary">💾 Save Tracking Code</button>
       </div>
 
-      <!-- Google Authenticator 2FA Reset Card (TOP) -->
+      <!-- Google Authenticator 2FA Card (TOP) -->
       <div class="card">
-        <div class="card-title">📱 Google Authenticator 2FA Settings</div>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px;">
-          Google Authenticator 6-digit TOTP security is active for your account. You can reset and pair a new phone device anytime below.
-        </p>
-        <button onclick="reset2FA()" class="btn-primary" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-          🔄 Reset & Pair New Authenticator App
-        </button>
+        <div class="card-title">📱 Google Authenticator 2FA Manager</div>
+        <div id="2faStatusContainer">
+          <p style="color:var(--text-muted);font-size:0.85rem;">Loading 2FA status...</p>
+        </div>
       </div>
 
       <!-- Image Management Card -->
@@ -636,6 +597,7 @@
   <script>
     let imagesList = [];
     let draggedIndex = null;
+    let setup2FASecret = "";
 
     function showAlert(msg, type = 'success') {
       const alertEl = document.getElementById('globalAlert');
@@ -646,27 +608,97 @@
       setTimeout(() => { alertEl.style.display = 'none'; }, 4000);
     }
 
-    async function load2FAInfo() {
+    async function checkPublic2FAStatus() {
       try {
-        const res = await fetch('/api/2fa/info');
+        const res = await fetch('/api/2fa/status');
         const data = await res.json();
-        const setupContainer = document.getElementById('setupContainer');
-        const totpLabel = document.getElementById('totpLabel');
-        const submitBtn = document.getElementById('totpSubmitBtn');
-
-        if (!data.isConfigured) {
-          setupContainer.classList.remove('hidden');
-          document.getElementById('qrCodeImg').src = data.qrCodeUrl;
-          document.getElementById('setupSecretKey').textContent = data.secret;
-          totpLabel.textContent = "Enter 6-Digit Code from App to Verify & Pair";
-          submitBtn.textContent = "🔐 Verify & Enable Google Authenticator";
+        const codeGroup = document.getElementById('2faCodeGroup');
+        const codeInput = document.getElementById('login2faCode');
+        if (data.isEnabled) {
+          codeGroup.classList.remove('hidden');
+          codeInput.required = true;
         } else {
-          setupContainer.classList.add('hidden');
-          totpLabel.textContent = "Enter 6-Digit Google Authenticator Code";
-          submitBtn.textContent = "🔐 Verify & Login";
+          codeGroup.classList.add('hidden');
+          codeInput.required = false;
         }
-      } catch(err) {
-        console.error("2FA Info Error:", err);
+      } catch(e){}
+    }
+
+    async function load2FADashboardCard() {
+      const container = document.getElementById('2faStatusContainer');
+      try {
+        const res = await fetch('/api/admin/2fa/setup');
+        const data = await res.json();
+        if (data.isEnabled) {
+          container.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;background:#0b0f19;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 16px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></div>
+              <div>
+                <div style="font-size:0.85rem;color:#34d399;font-weight:700;">🟢 Google Authenticator 2FA Active</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Both Admin Password AND 6-digit App Code are required on login.</div>
+              </div>
+            </div>
+            <button onclick="disable2FA()" class="btn-primary" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+              🔴 Disable 2FA Security
+            </button>
+          `;
+        } else {
+          setup2FASecret = data.secret;
+          container.innerHTML = `
+            <div style="background:#0b0f19;border:1px dashed var(--primary);border-radius:12px;padding:18px;text-align:center;">
+              <p style="font-size:0.88rem;font-weight:600;margin-bottom:12px;">Pair Google Authenticator App to Enable 2FA Security:</p>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px;">
+                1. Open <b>Google Authenticator App</b> on Android / iPhone.<br>
+                2. Scan this QR Code or type Key manually into app:
+              </p>
+              <div style="background:#fff;padding:10px;display:inline-block;border-radius:10px;margin-bottom:12px;">
+                <img src="${data.qrCodeUrl}" style="width:180px;height:180px;display:block;" />
+              </div>
+              <div style="font-family:monospace;font-size:0.9rem;color:#34d399;font-weight:700;letter-spacing:1px;background:rgba(16,185,129,0.1);padding:6px 14px;border-radius:6px;margin-bottom:16px;word-break:break-all;">
+                Key: ${data.secret}
+              </div>
+              <div style="max-width:300px;margin:0 auto;">
+                <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:6px;">Enter 6-digit code from App to verify:</label>
+                <input type="text" id="verify2faCodeInput" placeholder="123456" maxlength="6" style="font-size:1.2rem;text-align:center;letter-spacing:4px;font-family:monospace;font-weight:700;margin-bottom:12px;" />
+                <button onclick="enable2FA()" class="btn-primary" style="width:100%;justify-content:center;">🔐 Enable Google Authenticator 2FA</button>
+              </div>
+            </div>
+          `;
+        }
+      } catch(e) {
+        container.innerHTML = '<p style="color:var(--danger)">Failed to load 2FA info</p>';
+      }
+    }
+
+    async function enable2FA() {
+      const codeInput = document.getElementById('verify2faCodeInput');
+      if (!codeInput || !codeInput.value || codeInput.value.trim().length !== 6) {
+        showAlert('Please enter valid 6-digit code from Authenticator app', 'error');
+        return;
+      }
+      const res = await fetch('/api/admin/2fa/enable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: codeInput.value.trim(), secret: setup2FASecret })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showAlert('Google Authenticator 2FA Enabled Successfully!');
+        load2FADashboardCard();
+      } else {
+        showAlert(data.error || 'Failed to enable 2FA', 'error');
+      }
+    }
+
+    async function disable2FA() {
+      if (!confirm('Are you sure you want to disable 2FA security?')) return;
+      const res = await fetch('/api/admin/2fa/disable', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showAlert('2FA Security Disabled.');
+        load2FADashboardCard();
+      } else {
+        showAlert(data.error || 'Failed to disable 2FA', 'error');
       }
     }
 
@@ -677,31 +709,34 @@
         document.getElementById('loginModal').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
         loadData();
+        load2FADashboardCard();
       } else {
         document.getElementById('loginModal').classList.remove('hidden');
         document.getElementById('dashboard').classList.add('hidden');
-        load2FAInfo();
+        checkPublic2FAStatus();
       }
     }
 
-    document.getElementById('2faForm').onsubmit = async (e) => {
+    document.getElementById('loginForm').onsubmit = async (e) => {
       e.preventDefault();
-      const code = document.getElementById('totpCodeInput').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const code = document.getElementById('login2faCode').value;
       const loginAlert = document.getElementById('loginAlert');
       loginAlert.style.display = 'none';
 
       try {
-        const res = await fetch('/api/2fa/verify', {
+        const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ password, code })
         });
         const data = await res.json();
         if (data.success) {
-          document.getElementById('totpCodeInput').value = '';
+          document.getElementById('loginPassword').value = '';
+          document.getElementById('login2faCode').value = '';
           checkAuth();
         } else {
-          loginAlert.textContent = data.error || 'Invalid 6-digit code';
+          loginAlert.textContent = data.error || 'Login failed';
           loginAlert.style.display = 'block';
         }
       } catch(err) {
@@ -709,56 +744,6 @@
         loginAlert.style.display = 'block';
       }
     };
-
-    document.getElementById('passwordFallbackForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const password = document.getElementById('fallbackPasswordInput').value;
-      const loginAlert = document.getElementById('loginAlert');
-      loginAlert.style.display = 'none';
-
-      try {
-        const res = await fetch('/api/2fa/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById('fallbackPasswordInput').value = '';
-          checkAuth();
-        } else {
-          loginAlert.textContent = data.error || 'Invalid admin password';
-          loginAlert.style.display = 'block';
-        }
-      } catch(err) {
-        loginAlert.textContent = err.message;
-        loginAlert.style.display = 'block';
-      }
-    };
-
-    document.getElementById('togglePasswordMode').onclick = (e) => {
-      e.preventDefault();
-      document.getElementById('2faForm').classList.add('hidden');
-      document.getElementById('passwordFallbackForm').classList.remove('hidden');
-    };
-
-    document.getElementById('toggleTotpMode').onclick = (e) => {
-      e.preventDefault();
-      document.getElementById('passwordFallbackForm').classList.add('hidden');
-      document.getElementById('2faForm').classList.remove('hidden');
-    };
-
-    async function reset2FA() {
-      if (!confirm('Are you sure you want to reset Google Authenticator? You will need to scan a new QR code on next login.')) return;
-      const res = await fetch('/api/admin/2fa/reset', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        showAlert('Google Authenticator reset! Refreshing page...');
-        setTimeout(() => { location.reload(); }, 1500);
-      } else {
-        showAlert(data.error || 'Failed to reset 2FA', 'error');
-      }
-    }
 
     async function logout() {
       await fetch('/api/logout', { method: 'POST' });
