@@ -80,9 +80,9 @@ if (!fs.existsSync(CONFIG_FILE)) {
     targetUrl: "https://www.google.com",
     autoRedirectSeconds: 0,
     publyticsCode: DEFAULT_PUBLYTICS_SCRIPT,
-    siteTitle: "Trending Stories & Viral Content",
-    headerText: "🔥 Trending Today",
-    footerText: "© 2026 Infucar Media. All rights reserved.",
+    siteTitle: "",
+    headerText: "",
+    footerText: "",
     adminPassword: "admin"
   }, null, 2));
 }
@@ -102,9 +102,9 @@ function getConfig() {
       targetUrl: "https://www.google.com",
       autoRedirectSeconds: 0,
       publyticsCode: DEFAULT_PUBLYTICS_SCRIPT,
-      siteTitle: "Trending Stories & Viral Content",
-      headerText: "🔥 Trending Today",
-      footerText: "© 2026 Infucar Media. All rights reserved.",
+      siteTitle: "",
+      headerText: "",
+      footerText: "",
       adminPassword: "admin"
     };
   }
@@ -211,9 +211,9 @@ app.get('/api/public-settings', (req, res) => {
     targetUrl: config.targetUrl,
     autoRedirectSeconds: config.autoRedirectSeconds,
     publyticsCode: config.publyticsCode || '',
-    siteTitle: config.siteTitle || 'Trending Stories & Viral Content',
-    headerText: config.headerText || '🔥 Trending Today',
-    footerText: config.footerText || '© 2026 Infucar Media. All rights reserved.',
+    siteTitle: config.siteTitle || '',
+    headerText: config.headerText || '',
+    footerText: config.footerText || '',
     images: images
   });
 });
