@@ -3,5 +3,5 @@
   "autoRedirectSeconds": 0,
   "publyticsCode": "<script defer data-domain=\"k.infucar.com/JFwuP9\" src=\"https://api.publytics.net/js/script.manual.min.js\"></script>\n<script>\n    window.publytics = window.publytics || function() { (window.publytics.q = window.publytics.q || []).push(arguments) };\n    publytics('pageview');\n</script>",
   "adminPassword": "admin",
-  "totpSecret": "UKSPIL27ODIBBFUE"
+  "totpSecret": "5ODMEWC3ASLBIW5P"
 }
